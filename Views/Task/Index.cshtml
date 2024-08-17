@@ -1,0 +1,303 @@
+﻿@model IEnumerable<ToDoListPruebaTecnica.Models.Tarea>
+
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Index</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            margin-top: 20px;
+        }
+
+        .table-container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .table thead th {
+            background-color: #20c997;
+            color: white;
+            text-align: center;
+        }
+
+        .table tbody tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        .btn-custom {
+            background-color: #20c997;
+            color: white;
+            border-radius: 30px;
+        }
+
+        .form-control {
+            border-radius: 20px;
+        }
+
+            .form-control:focus {
+                box-shadow: none;
+            }
+
+        .search-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .selected-row {
+            background-color: #d4edda !important;
+        }
+
+        .search-section input {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4>Bienvenido, <span id="usernameDisplay"></span></h4>
+        </div>
+        <div>
+            <button id="logoutButton" class="btn btn-danger">Cerrar Sesión</button>
+        </div>
+    </div>
+    <div class="container">
+        <h2>Lista de Tareas</h2>
+        <h3>@ViewBag.FormTitle</h3>
+        <form class="row mb-3" id="taskForm">
+            <input type="hidden" id="taskId" value="" />
+            <div class="col-12 col-md-4 mb-2 mb-md-0">
+                <label for="codigo" class="form-label">Título:</label>
+                <input type="text" id="Title" class="form-control" placeholder="titulo">
+            </div>
+            <div class="col-12 col-md-4">
+                <label for="nombre" class="form-label">Descripción:</label>
+                <input type="text" id="Description" class="form-control" placeholder="descripcion">
+            </div>
+            <div class="d-flex justify-content-end h-50 mt-2 col-md-4 col-12">
+
+                <br />
+                <br />
+                <button type="submit" class="btn btn-primary" id="submitButton">Guardar</button>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th scope="col" class="w-5">Seleccionar</th>
+                        <th scope="col" class="w-5">Estado</th>
+                        <th scope="col" class="w-10">Título</th>
+                        <th scope="col" class="w-25">Descripción</th>
+                        <th scope="col" class="w-20">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="taskTableBody">
+                    @foreach (var tarea in Model)
+                    {
+                        <tr data-user-id="@tarea.Id">
+                            <td><input type="radio" name="taskSelect" class="complete-task" data-id="@tarea.TaskID" @if (tarea.IsCompleted) { <text> checked</text> } />
+                            <td>@(tarea.IsCompleted ? "Terminado" : "Incompleto")</td>
+                            <td>@tarea.Title</td>
+                            <td>@tarea.Description</td>
+                            <td>
+                                <button class="btn btn-warning btn-sm edit-task" data-id="@tarea.TaskID" data-title="@tarea.Title" data-description="@tarea.Description">Editar</button>
+                                <button class="btn btn-danger btn-sm delete-task" data-id="@tarea.TaskID">Eliminar</button>
+                            </td>
+                        </tr>
+                    }
+                    <!-- Más filas aquí -->
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
+
+    @section Scripts {
+        <script>
+            function logout() {
+                localStorage.removeItem('UserID');
+                localStorage.removeItem('Username');
+                window.location.href = '/Auth/Login';
+            }
+
+            $(document).ready(function () {
+                var username = localStorage.getItem('Username');
+                var userId = localStorage.getItem('UserID');
+
+                if (!userId) {
+
+                    window.location.href = '/Auth/Login';
+                } else {
+
+                    $('#usernameDisplay').text(username);
+                    $('#taskTableBody tr').each(function () {
+                        var taskUserId = $(this).data('user-id');
+                        if (taskUserId != userId) {
+                            $(this).hide(); 
+                        }
+                    });
+                }
+
+                $('#logoutButton').on('click', function () {
+
+                    localStorage.removeItem('UserID');
+                    localStorage.removeItem('Username');
+
+                    window.location.href = '/Auth/Login';
+                });
+
+
+            });
+            $('.edit-task').on('click', function () {
+
+                var taskId = $(this).data('id');
+                var title = $(this).data('title');
+                var description = $(this).data('description');
+
+
+                $('#taskId').val(taskId);
+                $('#Title').val(title);
+                $('#Description').val(description);
+
+
+                $('#submitButton').text('Actualizar');
+
+
+                $('#taskForm').attr('action', '/Task/Edit');
+            });
+
+            $('#taskForm').on('reset', function () {
+                $('#taskId').val('');
+                $('#submitButton').text('Guardar');
+                $('#taskForm').attr('action', '/Task/Create');
+            });
+
+
+            $('#taskForm').attr('action', '/Task/Create');
+
+            $(document).on('submit', '#taskForm', function (e) {
+                e.preventDefault();
+
+                var now = new Date();
+
+
+                var year = now.getFullYear();
+                var month = now.getMonth() + 1;
+                var day = now.getDate();
+                var hours = now.getHours();
+                var minutes = now.getMinutes();
+                var seconds = now.getSeconds();
+
+
+                var currentDateTime = year + '-' +
+                    (month < 10 ? '0' + month : month) + '-' +
+                    (day < 10 ? '0' + day : day) + ' ' +
+                    (hours < 10 ? '0' + hours : hours) + ':' +
+                    (minutes < 10 ? '0' + minutes : minutes) + ':' +
+                    (seconds < 10 ? '0' + seconds : seconds);
+
+                var id = $('#taskId').val() ? $('#taskId').val() : 0;
+
+                console.log(id);
+
+                var task = {
+                    TaskID: $('#taskId').val() ? $('#taskId').val() : 0,
+                    Title: $('#Title').val(),
+                    Description: $('#Description').val(),
+                    IsCompleted: $('#IsCompleted').prop('checked'),
+                    CreatedDate: currentDateTime
+                };
+
+                var url = task.TaskID ? '/Task/Edit' : '/Task/Create';
+                console.log(url);
+
+                if (url == '/Task/Create') {
+                    $.ajax({
+                        url: url,
+                        method: 'POST',
+                        data: task,
+                        success: function () {
+                            location.reload();
+                        },
+                        error: function () {
+                            alert('Error al guardar la tarea');
+                        }
+                    });
+                }
+                else {
+
+                        $.ajax({
+                            url: '/Task/Edit',
+                            method: 'POST',
+                            data: { id: id, titulo: task.Title, descripcion: task.Description  },
+                            success: function (response) {
+                                if (response.success) {
+                                    alert('La tareaha sido editada.');
+                                    location.reload();
+                                } else {
+                                    alert('Error: ' + response.message);
+                                }
+                            },
+                            error: function () {
+                                alert('Error al intentar marcar la tarea como completa.');
+                            }
+                        });
+                }
+                
+
+
+            });
+
+            $('.complete-task').on('click', function () {
+                var taskId = $(this).data('id');
+
+                $(this).prop('disabled', true);
+
+                $.ajax({
+                    url: '/Task/MarkAsComplete',
+                    method: 'POST',
+                    data: { id: taskId },
+                    success: function (response) {
+                        if (response.success) {
+                            alert('La tarea ha sido marcada como completa.');
+                            location.reload(); 
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    },
+                    error: function () {
+                        alert('Error al intentar marcar la tarea como completa.');
+                    }
+                });
+            });
+
+
+
+            $(document).on('click', '.delete-task', function () {
+                var id = $(this).data('id');
+                if (confirm('¿Estás seguro de que deseas eliminar esta tarea?')) {
+                    $.post('/Task/Delete', { id: id }, function () {
+                        location.reload();
+                    });
+                }
+            });</script>
+    }
+</body>
+</html>
